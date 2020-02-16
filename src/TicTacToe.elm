@@ -1,12 +1,14 @@
 module TicTacToe exposing (main)
 
 import Browser exposing (sandbox)
-import Html exposing (Html, button, div, input, text)
-import Html.Attributes exposing (class, value, style)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (Html, button, div, text)
+import Html.Attributes exposing (style)
+import Html.Events exposing (onClick)
 import List exposing (..)
 
 main = sandbox {init = init, view = view, update = update }
+
+type alias Board = List Symbol
 
 type Msg
     = PlaceSymbol Int 
@@ -16,21 +18,16 @@ type Symbol
     | O
     | Empty
     
+
 type alias Model = 
-    {board : List Symbol
-    ,currentSymbol : Symbol
-    }
+        {board : Board
+        ,currentSymbol : Symbol
+        }
 
 init : Model
 init = { board = [Empty, Empty, Empty,Empty, Empty, Empty,Empty, Empty, Empty] 
         ,currentSymbol = X
         }
-
-updateTurn : Symbol -> Symbol
-updateTurn s =
-    if s == X
-    then O
-    else X
 
 update : Msg -> Model -> Model
 update msg model =
@@ -48,17 +45,29 @@ cell position symbol =
 
 view : Model -> Html Msg
 view model =
-    div [style "display" "grid"
+    div []
+      [div [style "display" "grid"
         ,style "grid-template-columns" "auto auto auto"
-        ,style "width" "150px"]
-      (indexedMap cell model.board)
+        ,style "width" "150px"] 
+        (indexedMap cell model.board)
+      ,div [] (if hasWon model.board then [text "Player has won"] else [])]
+
+hasWon : Board -> Bool
+hasWon board =
+    False
+
+updateTurn : Symbol -> Symbol
+updateTurn s =
+    if s == X
+    then O
+    else X
 
 setNewVal : Int -> Symbol -> Int -> Symbol -> Symbol
-setNewVal p ns i cs =
-    if i == p && cs == Empty
-    then ns
-    else cs
+setNewVal pos newSymbol currentPos currentSymbol =
+    if pos == currentPos
+    then newSymbol
+    else currentSymbol
 
-updateInList : Int -> List Symbol -> Symbol -> List Symbol
-updateInList pos board ns =
-    indexedMap (setNewVal pos ns) board
+updateInList : Int -> Board -> Symbol -> Board
+updateInList pos board newSymbol =
+    indexedMap (setNewVal pos newSymbol) board
