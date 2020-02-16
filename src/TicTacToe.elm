@@ -10,14 +10,15 @@ main = sandbox {init = init, view = view, update = update }
 
 type alias Board = List Symbol
 
-winningMoves =  [[1,2,3]
-                ,[4,5,6]
-                ,[7,8,9]
-                ,[1,5,9]
-                ,[3,5,7]
+winningMoves : List Moves
+winningMoves =  [[0,1,2]
+                ,[3,4,5]
+                ,[6,7,8]
+                ,[0,4,8]
+                ,[2,4,6]
+                ,[0,3,6]
                 ,[1,4,7]
-                ,[2,5,8]
-                ,[3,6,9]]
+                ,[2,5,8]]
 
 type Msg
     = PlaceSymbol Int 
@@ -28,53 +29,47 @@ type Symbol
     | Empty
 
 type alias Moves = List Int
-type alias Player = 
-        {symbol: Symbol
-        ,moves:Moves}
+
+type alias Status =
+        {hasWon: Bool
+        ,winner: Symbol}
 
 type alias Model = 
         {board : Board
         ,currentSymbol : Symbol
-        ,x : Player
-        ,o : Player
-        ,won : Bool
+        ,currentPlayer : Moves
+        ,otherPlayer : Moves
+        ,status : Status
         }
 
 init : Model
 init = { board = [Empty, Empty, Empty,Empty, Empty, Empty,Empty, Empty, Empty] 
         ,currentSymbol = X
-        ,x = {symbol =  X, moves =  []}
-        ,o = {symbol =  O, moves  = []}
-        ,won = False
+        ,currentPlayer = []
+        ,otherPlayer = []
+        ,status = {hasWon = False, winner = Empty}
         }
 
 updateTurn : Symbol -> Symbol
 updateTurn s =
     case s of
         X -> O
-        _ -> X
-
-storeMove : Model -> Int -> Player
-storeMove model pos =
-    if model.currentSymbol == X
-    then {symbol=X, moves = model.x.moves ++ [pos]}
-    else {symbol=O, moves = model.x.moves ++ [pos]}
-                
+        _ -> X          
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         PlaceSymbol position ->
             {board = updateInList position model.board model.currentSymbol
-            ,x = storeMove model position
-            ,o = storeMove model position
-            ,won = hasWon (if X == model.currentSymbol then model.x.moves else model.o.moves)
+            ,currentPlayer =  model.otherPlayer
+            ,otherPlayer = model.currentPlayer ++ [position]
+            ,status = hasWon (model.currentPlayer ++ [position]) model.currentSymbol
             ,currentSymbol = updateTurn model.currentSymbol
             }
 
-cell : Int -> Symbol -> Html Msg
-cell position symbol =
-    button (if symbol == Empty 
+cell : Bool -> Int -> Symbol -> Html Msg
+cell won position symbol =
+    button (if symbol == Empty && won == False
             then [onClick (PlaceSymbol position)] 
             else []) [ text (Debug.toString symbol) ]
 
@@ -84,12 +79,13 @@ view model =
       [div [style "display" "grid"
         ,style "grid-template-columns" "auto auto auto"
         ,style "width" "150px"] 
-        (indexedMap cell model.board)
-      ,div [] (if model.won then [text "Player has won"] else [])]
+        (indexedMap (cell model.status.hasWon) model.board)
+      ,div [] (if model.status.hasWon then [text ((Debug.toString model.status.winner) ++ " has won!")] else [])]
 
-hasWon : List Int -> Bool
-hasWon moves =
-    List.any (\wm -> List.all (\e -> member e moves) wm) winningMoves
+hasWon : List Int -> Symbol -> Status
+hasWon moves symbol =
+    {hasWon = List.any (\wm -> List.all (\e -> member e moves) wm) winningMoves
+    ,winner = symbol}
 
 setNewVal : Int -> Symbol -> Int -> Symbol -> Symbol
 setNewVal pos newSymbol currentPos currentSymbol =
