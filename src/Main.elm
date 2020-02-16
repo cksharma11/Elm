@@ -2,25 +2,22 @@ module Main exposing (main)
 
 import Browser exposing (sandbox)
 import Html exposing (Html, button, div, input, text)
-import Html.Attributes exposing (autofocus, class, value)
+import Html.Attributes exposing (value)
 import Html.Events exposing (onClick, onInput)
+
+main = sandbox { init = init, view = view, update = update}
+
+init : { todo: String, todos : List String }
+init = { todo = "", todos = [] }
 
 type Msg
     = UpdateTodo String
     | AddTodo
 
 type alias Model =
-    { text : String
+    { todo : String
     , todos : List String
     }
-
-view : Model -> Html Msg
-view model =
-    div [ class "text-center" ]
-        [ input [ onInput UpdateTodo, value model.text, autofocus True ] []
-        , button [ onClick AddTodo ] [ text "Add Todo" ]
-        , div [] (List.map todoView model.todos)
-        ]
 
 todoView : String -> Html Msg
 todoView todo = 
@@ -30,15 +27,16 @@ update : Msg -> Model -> Model
 update msg model =
   case msg of
     UpdateTodo todoText ->
-      { model | text = todoText }
+      { model | todo = todoText }
 
     AddTodo ->
-      { model | text = "", todos = model.todos ++ [ model.text ] }
+      { model | todo = "", todos = model.todos ++ [ model.todo ] }
 
-main : Program () Model Msg
-main =
-    sandbox
-        { init = { text = "", todos = [] }
-        , view = view
-        , update = update
-        }
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ input [ onInput UpdateTodo, value model.todo ] []
+        , button [ onClick AddTodo ] [ text "Add Todo" ]
+        , div [] (List.map todoView model.todos)
+        ]
